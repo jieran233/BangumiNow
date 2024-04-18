@@ -1,0 +1,14 @@
+{
+    "bangumi": {
+        "list": [
+            {
+                "name": "",
+                "upstream-url": ""
+            }
+        ]
+    },
+    "telegram": {
+        "token": "",
+        "chat_id": ""
+    }
+}
