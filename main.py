@@ -2,10 +2,12 @@
 
 import os
 import json
+import aria2p.options
 import requests
 import xmltodict
 import uuid
 from time import sleep
+import aria2p
 import html
 import urllib.parse
 
@@ -50,22 +52,6 @@ def compare_lists(local_list, upstream_list):
     return added_items, modified_items, deleted_items
 
 
-def push_to_telegram(token, chat_id, message):
-    api_url = f"https://api.telegram.org/bot{token}/sendMessage"
-
-    payload = {
-        "chat_id": chat_id,
-        "text": message,
-        "parse_mode": "HTML",
-        "link_preview_options": {
-            "is_disabled": True
-        }
-    }
-
-    response = requests.post(api_url, json=payload, timeout=10)
-    return response.json()
-
-
 def parse_html(text):
     return html.escape(text)
     # return text.replace('<', '&lt;').replace('>', '&gt;').replace('&', '&amp;')
@@ -85,6 +71,49 @@ def simplify_magnet_link(magnet_link):
     return simplified_magnet_link
 
 
+def push_to_telegram(config, message):
+    api_url = f"https://api.telegram.org/bot{config['token']}/sendMessage"
+
+    payload = {
+        "chat_id": config['chat_id'],
+        "text": message,
+        "parse_mode": "HTML",
+        "link_preview_options": {
+            "is_disabled": True
+        }
+    }
+
+    response = requests.post(api_url, json=payload, timeout=config['timeout'])
+    return response.json()
+
+
+def win32_namespace_compatible(text):
+    def half2full(s):
+        '''
+        Convert all ASCII characters to the full-width counterpart.
+        https://stackoverflow.com/a/36693548
+        '''
+        HALF2FULL = dict((i, i + 0xFEE0) for i in range(0x21, 0x7F))
+        HALF2FULL[0x20] = 0x3000
+        return str(s).translate(HALF2FULL)
+    
+    foo = r'/\:*"?<>|'
+    for _ in foo:
+        if _ in text:
+            text = text.replace(_, half2full(_))
+
+    return text
+
+
+def push_magnet_to_aria2_rpc(config, magnet, bangumi_name):
+    config['options']['dir'] = config['options']['dir'].replace(r'{bangumi_name}',
+                                                                win32_namespace_compatible(bangumi_name))
+
+    aria2 = aria2p.API(aria2p.Client(
+            host=config['host'], port=config['port'], secret=config['secret'], timeout=config['timeout']))
+    return aria2.add_magnet(magnet, options=config['options'])
+
+
 def main():
     cd = os.path.split(os.path.realpath(__file__))[0]
     config_path = os.path.join(cd, 'config.json')
@@ -94,7 +123,8 @@ def main():
         config = json.loads(f.read())
 
     bangumi_list = config['bangumi']['list']
-    telegram = config['telegram']
+    config_aria2_rpc = config['aria2_rpc']
+    config_telegram = config['telegram']
 
     for bangumi in bangumi_list:
         data_file = os.path.join(cd, 'data', '{}.json'.format(get_uuid(bangumi['name'], uuid_table_path)))
@@ -107,7 +137,7 @@ def main():
             local_result_json = ''
             local_result_list = []
         
-        _xml = requests.get(url=bangumi['upstream-url'], timeout=10).text
+        _xml = requests.get(url=bangumi['upstream-url'], timeout=config['bangumi']['timeout']).text
         upstream_result_list = xmltodict.parse(_xml)['rss']['channel']['item']
         upstream_result_json = json.dumps(upstream_result_list)
 
@@ -128,6 +158,9 @@ def main():
             for _ in added:
                 webpage = parse_html(_['link'])
                 magnet = simplify_magnet_link(parse_html(_['enclosure']['@url']))
+
+                push_magnet_to_aria2_rpc(config=config_aria2_rpc, magnet=magnet, bangumi_name=bangumi['name'])
+
                 msg = (
                     f"{_['title']}\n"
                     f"Poster: {_['author']}\n"
@@ -140,7 +173,7 @@ def main():
             tg_msgs.append(parse_html(message))
                 
             for _ in tg_msgs:
-                push_to_telegram(token=telegram['token'], chat_id=telegram['chat_id'], message=_)
+                push_to_telegram(config=config_telegram, message=_)
                 sleep(1)
             
             with open(data_file, 'w') as f:

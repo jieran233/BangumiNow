@@ -1,2 +1,3 @@
 requests
 xmltodict
+aria2p

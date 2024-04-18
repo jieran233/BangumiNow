@@ -22,7 +22,7 @@ Put your `token` and `chat_id` to `config.json` (Reference template file format)
 
 ### requirements
 
-Install `python python-requests python-xmltodict`
+Install `python python-requests python-xmltodict aria2p`
 
 Install `cronie`, enable it: `sudo systemctl enable --now cronie.service`
 

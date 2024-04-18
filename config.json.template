@@ -5,10 +5,26 @@
                 "name": "",
                 "upstream-url": ""
             }
-        ]
+        ],
+        "timeout": 10
+    },
+    "aria2_rpc": {
+        "host": "http://localhost",
+        "port": 6800,
+        "secret": "",
+        "timeout": 10,
+        "options": {
+            "dir": "/downloads/{bangumi_name}",
+            "file-allocation": "none",
+            "check-integrity": true,
+            "seed-ratio": "10.0",
+            "seed-time": null,
+            "max-overall-upload-limit": null
+        }
     },
     "telegram": {
         "token": "",
-        "chat_id": ""
+        "chat_id": "",
+        "timeout": 10
     }
 }
