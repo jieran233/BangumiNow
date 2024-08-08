@@ -12,6 +12,10 @@ Search name of bangumi in `https://share.dmhy.org/`
 
 Click RSS button in the webpage, copy its link
 
+```
+https://share.dmhy.org/topics/rss/rss.xml?keyword=<keyword>&sort_id=0&team_id=<team_id>&order=date-desc
+```
+
 Put the link to `config.json` (Reference template file format)
 
 ### telegram
