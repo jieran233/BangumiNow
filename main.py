@@ -83,7 +83,7 @@ def push_to_telegram(config, message):
         }
     }
 
-    response = requests.post(api_url, json=payload, timeout=config['timeout'])
+    response = requests.post(api_url, json=payload, timeout=config['timeout'], proxies=proxies)
     return response.json()
 
 
@@ -125,6 +125,7 @@ def main():
     bangumi_list = config['bangumi']['list']
     config_aria2_rpc = config['aria2_rpc']
     config_telegram = config['telegram']
+    config_proxies = config['proxies']
 
     for bangumi in bangumi_list:
         data_file = os.path.join(cd, 'data', '{}.json'.format(get_uuid(bangumi['name'], uuid_table_path)))
@@ -137,7 +138,7 @@ def main():
             local_result_json = ''
             local_result_list = []
         
-        _xml = requests.get(url=bangumi['upstream-url'], timeout=config['bangumi']['timeout']).text
+        _xml = requests.get(url=bangumi['upstream-url'], timeout=config['bangumi']['timeout'], proxies=config_proxies).text
         upstream_result_list = xmltodict.parse(_xml)['rss']['channel']['item']
         upstream_result_json = json.dumps(upstream_result_list)
 
