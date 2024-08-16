@@ -71,7 +71,7 @@ def simplify_magnet_link(magnet_link):
     return simplified_magnet_link
 
 
-def push_to_telegram(config, message):
+def push_to_telegram(config, message, proxies):
     api_url = f"https://api.telegram.org/bot{config['token']}/sendMessage"
 
     payload = {
@@ -174,7 +174,7 @@ def main():
             tg_msgs.append(parse_html(message))
                 
             for _ in tg_msgs:
-                push_to_telegram(config=config_telegram, message=_)
+                push_to_telegram(config=config_telegram, message=_, proxies=config_proxies)
                 sleep(1)
             
             with open(data_file, 'w') as f:
